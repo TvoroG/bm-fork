@@ -3,9 +3,13 @@ import mechanize
 import urllib2
 from bs4 import BeautifulSoup
 
+from managers import BetcityManager, MarathonManager
+
+
 class Bookmaker(object):
     def __init__(self):
         self.url = None
+        self.cur_header = None
         super(Bookmaker, self).__init__()
 
     def parse(self):
@@ -33,7 +37,7 @@ class Bookmaker(object):
     def parse_event(self, e):
         return None
 
-    def found_event(self, pe):
+    def found_event(self, e):
         return None
 
     def get_html(self):
@@ -51,10 +55,12 @@ class Bookmaker(object):
         return []
 
 
+# пока заблокировали
 class Betcity(Bookmaker):
     def __init__(self):
         super(Betcity, self).__init__()
         self.url = 'http://betcityru.com/bets/bets.php'
+        self.manager = BetcityManager()
 
     def parse_header(self, bg):
         sel = bg.select('thead b')
@@ -64,21 +70,15 @@ class Betcity(Bookmaker):
         return sel[0].get_text(strip=True)
 
     def found_header(self, ph):
+        self.cur_header = ph
         return None
 
     def parse_event(self, e):
-        fields = e.select('tr.tc')
-        fields.extend(e.select('tr.tcl'))
-        if not fields:
-            return None
-
-        field = fields[0]
-        team1 = field.contents[1].get_text(strip=True)
-        team2 = field.contents[4].get_text(strip=True)
-        return (team1, team2)
+        event = self.manager.create_event(self.cur_header, e)
+        return event
 
     def found_event(self, pe):
-        print pe[0] + ' - ' + pe[1]
+        print 'found'
     
     def get_html(self):
         br = self.open_connection()
@@ -103,6 +103,7 @@ class Marathon(Bookmaker):
     def __init__(self):
         super(Marathon, self).__init__()
         self.url = 'http://www.marathonbet.com/su/betting/all'
+        self.manager = MarathonManager()
 
     def parse_header(self, bg):
         sel = bg.select('.category-path')
@@ -111,23 +112,15 @@ class Marathon(Bookmaker):
         return sel[0].get_text(strip=True)
 
     def found_header(self, ph):
-        print '------------------'
-        print ph
-        print ''
-        return None
+        self.cur_header = ph
 
     def parse_event(self, e):
-        fields = e.select('div.member-name')
-        fields.extend(e.select('div.today-member-name'))
-        if not fields:
-            return None
-
-        team1 = fields[0].get_text(strip=True)
-        team2 = fields[1].get_text(strip=True)
-        return (team1, team2)
+        event = self.manager.create_event(self.cur_header, e)
+        return event
 
     def found_event(self, pe):
-        print pe[0] + ' - ' + pe[1]
+        print self.cur_header
+        print 'found'
 
     def get_html(self):
         html = urllib2.urlopen(self.url)
@@ -137,9 +130,10 @@ class Marathon(Bookmaker):
         return soup.select('#container_EVENTS > .main-block-events')
 
     def get_bet_group_events(self, bg):
-        return bg.select('table.foot-market tbody')
+        sel = bg.select('table.foot-market > tbody')
+        return sel
 
 
 if __name__ == '__main__':
-    m = Marathon()
-    m.parse()
+    b = Marathon()
+    b.parse()
