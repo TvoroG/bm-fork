@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 import mechanize
 import urllib2
 from bs4 import BeautifulSoup
@@ -13,6 +14,8 @@ class Bookmaker(object):
         super(Bookmaker, self).__init__()
 
     def parse(self):
+        bm_events = []
+        
         html = self.get_html()
         soup = BeautifulSoup(html, 'lxml')
         
@@ -26,7 +29,10 @@ class Bookmaker(object):
             for e in events:
                 event = self.parse_event(e)
                 if event is not None:
+                    bm_events.append(event)
                     self.found_event(event)
+        
+        return bm_events
 
     def parse_header(self, bg):
         return None
@@ -59,27 +65,28 @@ class Bookmaker(object):
 class Betcity(Bookmaker):
     def __init__(self):
         super(Betcity, self).__init__()
-        self.url = 'http://betcityru.com/bets/bets.php'
+        self.url = 'http://betsbc.com/bets/bets.php'
         self.manager = BetcityManager()
 
     def parse_header(self, bg):
-        sel = bg.select('thead b')
-        if not sel:
-            return None
-
-        return sel[0].get_text(strip=True)
-
+        self.cur_header = None
+        header = self.manager.create_header(bg)
+        return header
+        
     def found_header(self, ph):
         self.cur_header = ph
-        return None
+        #print ''.join(ph.bet_pos.keys())
 
     def parse_event(self, e):
+        if self.cur_header is None:
+            return None
         event = self.manager.create_event(self.cur_header, e)
         return event
 
     def found_event(self, pe):
-        print 'found'
-    
+        #pass
+        print ''.join(pe.objs_ids.keys())
+
     def get_html(self):
         br = self.open_connection()
         br.select_form(name='bets')
@@ -106,21 +113,23 @@ class Marathon(Bookmaker):
         self.manager = MarathonManager()
 
     def parse_header(self, bg):
-        sel = bg.select('.category-path')
-        if not sel:
-            return None
-        return sel[0].get_text(strip=True)
+        self.cur_header = None
+        header = self.manager.create_header(bg)
+        return header
 
     def found_header(self, ph):
         self.cur_header = ph
+#        print ''.join(ph.bet_pos.keys())
 
     def parse_event(self, e):
+        if self.cur_header is None:
+            return None
         event = self.manager.create_event(self.cur_header, e)
         return event
 
     def found_event(self, pe):
-        print self.cur_header
-        print 'found'
+#        pass
+        print ''.join(pe.objs_ids.keys())
 
     def get_html(self):
         html = urllib2.urlopen(self.url)
@@ -132,8 +141,3 @@ class Marathon(Bookmaker):
     def get_bet_group_events(self, bg):
         sel = bg.select('table.foot-market > tbody')
         return sel
-
-
-if __name__ == '__main__':
-    b = Marathon()
-    b.parse()
