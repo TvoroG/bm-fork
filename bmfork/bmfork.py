@@ -3,7 +3,10 @@ from models import db
 
 app = Flask(__name__)
 app.config.from_object('configs.settings')
-app.config.from_envvar('BMFORK_SETTINGS')
+try:
+    app.config.from_envvar('BMFORK_SETTINGS')
+except Exception as e:
+    print e
 
 db.init_app(app)
 
