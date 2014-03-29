@@ -1,4 +1,5 @@
 from models import Synonym
+from utils import create_sets_from
 
 class Header(object):
 
@@ -12,7 +13,16 @@ class Header(object):
 
     def find_heads_ids(self):
         syns = Synonym.query.filter(Synonym.name.in_(self.heads))
-        return {s.group.category.id: s.group_id for s in syns}
+        hids = create_sets_from(syns)
+        return hids
+
+    def __eq__(self, h):
+        for cat in self.heads_ids:
+            if cat in h.heads_ids:
+                if not self.heads_ids[cat] & h.heads_ids[cat]:
+                    return False
+        return True
+                
 
 
 class BetcityHeader(Header):

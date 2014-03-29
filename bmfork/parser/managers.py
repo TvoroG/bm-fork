@@ -4,6 +4,7 @@ from headers import BetcityHeader, MarathonHeader
 from events import BetcityEvent, MarathonEvent
 from headersname import betcity_headers_name, marathon_headers_name, OBJECT1, OBJECT2
 
+
 class Manager(object):
     headers_name = None
 
