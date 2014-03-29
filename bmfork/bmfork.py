@@ -2,7 +2,8 @@ from flask import Flask
 from models import db
 
 app = Flask(__name__)
-app.config.from_object('settings')
+app.config.from_object('configs.settings')
+app.config.from_envvar('BMFORK_SETTINGS')
 
 db.init_app(app)
 
